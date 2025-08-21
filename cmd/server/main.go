@@ -32,7 +32,7 @@ func main() {
 	defer ch.Close()
 	fmt.Println("Channel opened successfully")
 
-	playingState := routing.PlayingState{IsPaused: false}
+	playingState := routing.PlayingState{IsPaused: true}
 	pubsub.PublishJSON(ch, routing.ExchangePerilDirect, routing.PauseKey, playingState)
 
 	// Create a context that cancels on SIGINT or SIGTERM
