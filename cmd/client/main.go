@@ -27,22 +27,20 @@ func main() {
 		return
 	}
 
-	// Declare and bind the queue for receiving pause messages
-	pauseCh, pauseQueue, err := pubsub.DeclareAndBind(
+	gameState := gamelogic.NewGameState(username)
+
+	err = pubsub.SubscribeJSON(
 		connection,
 		routing.ExchangePerilDirect,
 		routing.PauseKey + "." + username,
 		routing.PauseKey,
 		pubsub.TransientQueue,
+		handlerPause(gameState),
 	)
 	if err != nil {
-		fmt.Printf("Failed to declare and bind pause queue: %s\n", err)
+		fmt.Printf("Failed to subscribe to pause messages: %s\n", err)
 		return
 	}
-
-	fmt.Printf("Queue %s declared and bound successfully to channel %v\n", pauseQueue.Name, pauseCh)
-
-	gameState := gamelogic.NewGameState(username)
 
 	quit := false
 	for !quit {
@@ -76,5 +74,12 @@ func main() {
 		default:
 			fmt.Printf("Unknown command: %s\n", command)
 		}
+	}
+}
+
+func handlerPause(gs *gamelogic.GameState) func(routing.PlayingState) {
+	return func(ps routing.PlayingState) {
+		defer fmt.Print("> ")
+		gs.HandlePause(ps)
 	}
 }
