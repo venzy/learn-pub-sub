@@ -1,11 +1,7 @@
 package main
 
 import (
-	"context"
 	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/bootdotdev/learn-pub-sub-starter/internal/gamelogic"
 	"github.com/bootdotdev/learn-pub-sub-starter/internal/pubsub"
@@ -36,11 +32,7 @@ func main() {
 	playingState := routing.PlayingState{IsPaused: true}
 	pubsub.PublishJSON(ch, routing.ExchangePerilDirect, routing.PauseKey, playingState)
 
-	// Create a context that cancels on SIGINT or SIGTERM
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
-	fmt.Println("Running... Press Ctrl+C to exit.")
+	fmt.Println("Running... Use 'quit' to exit.")
 
 	// Hint to the user about server commands
 	gamelogic.PrintServerHelp()
@@ -69,9 +61,4 @@ func main() {
 			gamelogic.PrintServerHelp()
 		}
 	}
-
-	// Block until signal is received - Done() returns a channel that is closed when the context is canceled
-	<-ctx.Done()
-
-	fmt.Println("Received shutdown signal, cleaning up...")
 }
