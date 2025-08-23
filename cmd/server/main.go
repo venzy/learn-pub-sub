@@ -21,16 +21,33 @@ func main() {
 	defer connection.Close()
 	fmt.Println("Connected to RabbitMQ")
 
-	ch, err := connection.Channel()
+	pauseCh, err := connection.Channel()
 	if err != nil {
 		fmt.Printf("Failed to open a channel: %s\n", err)
 		return
 	}
-	defer ch.Close()
+	defer pauseCh.Close()
 	fmt.Println("Channel opened successfully")
 
 	playingState := routing.PlayingState{IsPaused: true}
-	pubsub.PublishJSON(ch, routing.ExchangePerilDirect, routing.PauseKey, playingState)
+	err = pubsub.PublishJSON(pauseCh, routing.ExchangePerilDirect, routing.PauseKey, playingState)
+	if err != nil {
+		fmt.Printf("Failed to publish initial pause state: %s\n", err)
+		return
+	}
+
+	logCh, logQueue, err := pubsub.DeclareAndBind(
+		connection,
+		routing.ExchangePerilTopic,
+		routing.GameLogSlug,
+		routing.GameLogSlug + ".*",
+		pubsub.DurableQueue,
+	)
+	if err != nil {
+		fmt.Printf("Failed to declare and bind game log queue: %s\n", err)
+		return
+	}
+	fmt.Printf("Game log queue %s declared and bound successfully to channel %v\n", logQueue.Name, logCh)
 
 	fmt.Println("Running... Use 'quit' to exit.")
 
@@ -48,11 +65,11 @@ func main() {
 		case "pause":
 			fmt.Println("Pausing the game...")
 			playingState.IsPaused = true
-			pubsub.PublishJSON(ch, routing.ExchangePerilDirect, routing.PauseKey, playingState)
+			pubsub.PublishJSON(pauseCh, routing.ExchangePerilDirect, routing.PauseKey, playingState)
 		case "resume":
 			fmt.Println("Resuming the game...")
 			playingState.IsPaused = false
-			pubsub.PublishJSON(ch, routing.ExchangePerilDirect, routing.PauseKey, playingState)
+			pubsub.PublishJSON(pauseCh, routing.ExchangePerilDirect, routing.PauseKey, playingState)
 		case "quit":
 			fmt.Println("Quitting the server...")
 			quit = true
