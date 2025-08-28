@@ -3,6 +3,7 @@ package pubsub
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -14,6 +15,18 @@ const (
 	DurableQueue SimpleQueueType = iota
 	// TransientQueue indicates a transient queue that does not survive server restarts
 	TransientQueue
+)
+
+// AckType represents the acknowledgment type for message processing
+type AckType int
+
+const (
+	// Ack indicates that a message was processed successfully
+	Ack AckType = iota
+	// NackRequeue indicates that a message was not processed successfully and should be requeued
+	NackRequeue
+	// NackDiscard indicates that a message was not processed successfully and should be discarded
+	NackDiscard
 )
 
 func DeclareAndBind(
@@ -78,7 +91,7 @@ func SubscribeJSON[T any](
     queueName,
     key string,
     queueType SimpleQueueType, // an enum to represent "durable" or "transient"
-    handler func(T),
+    handler func(T) AckType,
 ) error {
 	connCh, q, err := DeclareAndBind(conn, exchange, queueName, key, queueType)
 	if err != nil {
@@ -105,8 +118,17 @@ func SubscribeJSON[T any](
 				msg.Nack(false, false) // nack the message if unmarshal fails
 				continue
 			}
-			handler(val)
-			msg.Ack(false) // ack the message after processing
+			switch (handler(val)) {
+			case Ack:
+				fmt.Println("Acking message")
+				msg.Ack(false) // ack the message after processing
+			case NackRequeue:
+				fmt.Println("Nacking message (requeue)")
+				msg.Nack(false, true) // nack the message and requeue
+			case NackDiscard:
+				fmt.Println("Nacking message (discard)")
+				msg.Nack(false, false) // nack the message and discard
+			}
 		}
 	}()
 
