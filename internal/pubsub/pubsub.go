@@ -47,7 +47,7 @@ func DeclareAndBind(
 		queueType == TransientQueue, // delete if TransientQueue
 		queueType == TransientQueue, // exclusive if TransientQueue
 		false, // noWait is false
-		nil,   // arguments are empty
+		amqp.Table{"x-dead-letter-exchange": "peril_dlx"}, // arguments
 	)
 	if err != nil {
 		return nil, amqp.Queue{}, err
