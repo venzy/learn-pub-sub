@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 
-	"github.com/bootdotdev/learn-pub-sub-starter/internal/gamelogic"
-	"github.com/bootdotdev/learn-pub-sub-starter/internal/pubsub"
-	"github.com/bootdotdev/learn-pub-sub-starter/internal/routing"
+	"github.com/venzy/learn-pub-sub/internal/gamelogic"
+	"github.com/venzy/learn-pub-sub/internal/pubsub"
+	"github.com/venzy/learn-pub-sub/internal/routing"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
