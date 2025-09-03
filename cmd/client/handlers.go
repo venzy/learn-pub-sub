@@ -27,7 +27,7 @@ func handlerMove(gs *gamelogic.GameState, warCh *amqp.Channel) func(gamelogic.Ar
 			err := pubsub.PublishJSON(
 				warCh,
 				routing.ExchangePerilTopic,
-				routing.WarRecognitionsPrefix+"."+gs.GetPlayerSnap().Username,
+				routing.WarRecognitionsPrefix + "." + gs.GetPlayerSnap().Username,
 				gamelogic.RecognitionOfWar{
 					Attacker: am.Player,
 					Defender: gs.GetPlayerSnap(),
@@ -35,13 +35,13 @@ func handlerMove(gs *gamelogic.GameState, warCh *amqp.Channel) func(gamelogic.Ar
 			)
 			if err != nil {
 				fmt.Printf("Failed to publish war recognition: %s\n", err)
-			} else {
-				fmt.Printf("War recognition published successfully\n")
+				return pubsub.NackRequeue
 			}
-			// Insane, remove later
-			return pubsub.NackRequeue
+			fmt.Printf("War recognition published successfully\n")
+			return pubsub.Ack
 		case gamelogic.MoveOutcomeSamePlayer:
-			return pubsub.NackDiscard
+			// Nothing further to process
+			return pubsub.Ack
 		default:
 			return pubsub.NackDiscard
 		}

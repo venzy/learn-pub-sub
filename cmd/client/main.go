@@ -45,6 +45,8 @@ func main() {
 
 	gameState := gamelogic.NewGameState(username)
 
+	// Each client gets its own pause queue, and the direct exchange routes
+	// a copy of every pause message to each queue
 	err = pubsub.SubscribeJSON(
 		connection,
 		routing.ExchangePerilDirect,
@@ -58,6 +60,8 @@ func main() {
 		return
 	}
 
+	// Each client gets its own move queue, and the topic exchange routes
+	// a copy of every move message to each queue
 	err = pubsub.SubscribeJSON(
 		connection,
 		routing.ExchangePerilTopic,
@@ -71,6 +75,14 @@ func main() {
 		return
 	}
 
+	// All clients share a single war queue, and the topic exchange routes
+	// a copy of every war message to this single queue.
+	// Clients are called in a round-robin fashion.
+	// Each client then decides if it is involved in the war or not, and
+	// NackRequeues if not, so the next client can receive it.
+	// Not an efficient design, but helps demostrate NackRequeue.
+	// A better design would be to have the server route war messages
+	// to only the involved clients, but that is more complex to implement.
 	err = pubsub.SubscribeJSON(
 		connection,
 		routing.ExchangePerilTopic,
