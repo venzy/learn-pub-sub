@@ -27,9 +27,17 @@ func main() {
 		return
 	}
 
+	logCh, err := connection.Channel()
+	if err != nil {
+		fmt.Printf("Failed to open log channel: %s\n", err)
+		return
+	}
+	defer logCh.Close()
+
+	fmt.Println("Move channel opened successfully")
 	moveCh, err := connection.Channel()
 	if err != nil {
-		fmt.Printf("Failed to open a channel: %s\n", err)
+		fmt.Printf("Failed to open move channel: %s\n", err)
 		return
 	}
 	defer moveCh.Close()
@@ -37,7 +45,7 @@ func main() {
 
 	warCh, err := connection.Channel()
 	if err != nil {
-		fmt.Printf("Failed to open a channel: %s\n", err)
+		fmt.Printf("Failed to open war channel: %s\n", err)
 		return
 	}
 	defer warCh.Close()
@@ -89,7 +97,7 @@ func main() {
 		routing.WarRecognitionsPrefix,
 		routing.WarRecognitionsPrefix + ".*",
 		pubsub.DurableQueue,
-		handlerWar(gameState),
+		handlerWar(gameState, logCh),
 	)
 	if err != nil {
 		fmt.Printf("Failed to subscribe to war messages: %s\n", err)
