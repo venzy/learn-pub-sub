@@ -36,18 +36,18 @@ func main() {
 		return
 	}
 
-	logCh, logQueue, err := pubsub.DeclareAndBind(
+	err = pubsub.SubscribeGob(
 		connection,
 		routing.ExchangePerilTopic,
 		routing.GameLogSlug,
 		routing.GameLogSlug + ".*",
 		pubsub.DurableQueue,
+		handlerLogMessage(),
 	)
 	if err != nil {
-		fmt.Printf("Failed to declare and bind game log queue: %s\n", err)
+		fmt.Printf("Failed to subscribe to game log messages: %s\n", err)
 		return
 	}
-	fmt.Printf("Game log queue %s declared and bound successfully to channel %v\n", logQueue.Name, logCh)
 
 	fmt.Println("Running... Use 'quit' to exit.")
 
