@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/venzy/learn-pub-sub/internal/gamelogic"
 	"github.com/venzy/learn-pub-sub/internal/pubsub"
@@ -139,7 +140,27 @@ func main() {
 		case "help":
 			gamelogic.PrintClientHelp()
 		case "spam":
-			fmt.Printf("Spamming not allowed yet!\n")
+			if len(userInput) < 2 {
+				fmt.Printf("Usage: spam <number of messages>\n")
+				continue
+			}
+			count, err := strconv.ParseInt(userInput[1], 10, 64)
+			if err != nil || count <= 0 {
+				fmt.Printf("Invalid number of messages: %s\n", userInput[1])
+				continue
+			}
+			for range count {
+				log := gamelogic.GetMaliciousLog()
+				err = pubsub.PublishJSON(
+					logCh,
+					routing.ExchangePerilTopic,
+					routing.GameLogSlug + "." + username,
+					log,
+				)
+				if err != nil {
+					fmt.Printf("Failed to publish log: %s\n", err)
+				}
+			}
 		case "quit":
 			gamelogic.PrintQuit()
 			quit = true
