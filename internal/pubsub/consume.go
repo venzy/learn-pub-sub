@@ -114,6 +114,10 @@ func subscribe[T any](
 		return err
 	}
 
+	err = connCh.Qos(10, 0, false) // prefetch count of 10
+	if err != nil {
+		return err
+	}
 	msgs, err := connCh.Consume(
 		q.Name,
 		"",

@@ -2,6 +2,11 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"golang.org/x/term"
 
 	"github.com/venzy/learn-pub-sub/internal/gamelogic"
 	"github.com/venzy/learn-pub-sub/internal/pubsub"
@@ -46,6 +51,17 @@ func main() {
 	)
 	if err != nil {
 		fmt.Printf("Failed to subscribe to game log messages: %s\n", err)
+		return
+	}
+
+	isTTY := term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd()))
+	if !isTTY {
+		fmt.Println("No TTY detected. Running in background mode. Press Ctrl+C to exit.")
+		// Wait for interrupt signal to gracefully shutdown
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+		<-sigCh
+		fmt.Println("Shutting down gracefully...")
 		return
 	}
 

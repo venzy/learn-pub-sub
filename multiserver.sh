@@ -1,33 +1,31 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-# Check if the number of instances was provided
-if [ -z "$1" ]; then
+if [ -z "${1:-}" ]; then
   echo "Usage: $0 <number-of-instances>"
   exit 1
 fi
+num_instances="$1"
 
-num_instances=$1
+# Build once
+echo "Building..."
+go build -o peril_server ./cmd/server
 
-# Array to store process IDs
-declare -a pids
+pids=()
 
-# Function to kill all processes when Ctrl+C is pressed
 cleanup() {
-  echo "Terminating all instances of ./cmd/server..."
-  for pid in "${pids[@]}"; do
-    kill -SIGTERM "$pid"
-  done
-  exit
+  echo "Terminating ${#pids[@]} instances..."
+  if ((${#pids[@]})); then
+    kill -TERM "${pids[@]}" 2>/dev/null || true
+    wait "${pids[@]}" 2>/dev/null || true
+  fi
 }
+trap cleanup INT TERM EXIT
 
-# Setup trap for SIGINT
-trap 'cleanup' SIGINT
-
-# Start the specified number of instances of the program in the background
-for (( i=0; i<num_instances; i++ )); do
-  go run ./cmd/server &
+mkdir -p logs
+for ((i=1; i<=num_instances; i++)); do
+  ./peril_server >"logs/peril_${i}.log" 2>&1 &
   pids+=($!)
 done
 
-# Wait for all background processes to finish
 wait

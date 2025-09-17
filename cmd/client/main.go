@@ -3,11 +3,12 @@ package main
 import (
 	"fmt"
 	"strconv"
+	"time"
 
+	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/venzy/learn-pub-sub/internal/gamelogic"
 	"github.com/venzy/learn-pub-sub/internal/pubsub"
 	"github.com/venzy/learn-pub-sub/internal/routing"
-	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 func main() {
@@ -150,8 +151,12 @@ func main() {
 				continue
 			}
 			for range count {
-				log := gamelogic.GetMaliciousLog()
-				err = pubsub.PublishJSON(
+				log := routing.GameLog{
+					CurrentTime: time.Now(),
+					Username:    username,
+					Message:     gamelogic.GetMaliciousLog(),
+				}
+				err = pubsub.PublishGob(
 					logCh,
 					routing.ExchangePerilTopic,
 					routing.GameLogSlug + "." + username,
